@@ -5,18 +5,13 @@ import org.junit.{Assert, Test}
 class DocumentCollectionTest {
   @Test
   def testCreateCollection() {
-    val builder = new DocumentCollectionBuilder(2)
-
-    builder.addDocument("a simple document")
-    builder.addDocument("another simple Document")
-
-    val collection = builder.buildCollection()
+    val collection = new DocumentCollection(2)
+      .addDocument("a simple document")
+      .addDocument("another simple Document")
 
     Assert.assertEquals(2, collection.numDocs)
     Assert.assertEquals(10, collection.numTerms)
 
     println(collection.termFreq)
   }
-
-
 }

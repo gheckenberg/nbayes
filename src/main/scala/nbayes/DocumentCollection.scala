@@ -1,35 +1,33 @@
 package nbayes
 
 import annotation.tailrec
+import scala.math.log
 
-class DocumentCollection(val numDocs: Int, val termFreq: List[(String, Int)]) {
-  val numTerms = termFreq.foldLeft(0)((count, termFreq) => count + termFreq._2)
-}
+class DocumentCollection(val numDocs: Int, val ngrams: Int, val termFreq: Map[String, Int]) {
 
-class DocumentCollectionBuilder(val ngram: Int) {
-  private var termFreq = Map[String, Int]()
-  private var numDocuments = 0
+  def this(ngrams: Int) = this(0, ngrams, Map())
 
-  def incrTerm(term: String) {
-    termFreq = termFreq.updated(term, termFreq.getOrElse(term, 0) + 1)
-  }
+  def this() = this(0, 1, Map())
 
-  def addDocument(text: String) {
+  def addDocument(text: String) =
+    new DocumentCollection(numDocs + 1, ngrams,
+      TextProcessor.createAllNGramTerms(text, ngrams)
+        .foldLeft(termFreq) ((m, s) => m.updated(s, m.getOrElse(s,0) + 1)))
+
+  def numTerms =
+    termFreq.foldLeft(0){(count, entry) => count + entry._2}
+
+  // calculates log likelihood, ignores prior denominator with total number of documents.
+  def calcLogLikelihood(text: String) = {
     @tailrec
-    def addNgram(wordList: List[String], ngram: Int) {
-      if (ngram > 0){
-        TextProcessor.createNGrams(ngram, wordList)
-          .map(term => term.foldLeft(null.asInstanceOf[String]) ((a, b) => if (a != null) a + ":" + b else b ))
-          .foreach(incrTerm(_));
-        addNgram(wordList, ngram - 1)
+    def calcTermLikelihood(terms: List[String], accum: Double = 0) : Double = {
+      terms match {
+        case x :: xs => calcTermLikelihood (xs, accum + log(termFreq.getOrElse(x, 0) + 1))
+        case _ => accum
       }
     }
-    val wordList = TextProcessor.splitAndStem(text)
-    numDocuments += 1
-    addNgram(wordList, ngram)
-  }
-
-  def buildCollection() = {
-    new DocumentCollection(numDocuments, termFreq.toList.sortBy(_._1))
+    val terms = TextProcessor.createAllNGramTerms(text, ngrams)
+    log(numDocs + 1) + calcTermLikelihood(terms) - terms.length * log(numTerms + 1)
   }
 }
+

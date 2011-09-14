@@ -33,6 +33,19 @@ object TextProcessor {
     stemWords(splitWords(text))
   }
 
+  def createAllNGramTerms(text: String, ngram : Int) = {
+    @tailrec
+    def getNgrams(wordList: List[String], ngram: Int, accum : List[String]) : List[String] = {
+      if (ngram > 0)
+        getNgrams(wordList, ngram - 1, createNGrams(ngram, wordList)
+          .map(term => term.foldLeft(null.asInstanceOf[String]) ((a, b) => if (a != null) a + ":" + b else b ))
+          .foldRight(accum) ((term, list) => term :: list))
+      else
+        accum
+    }
+    getNgrams(splitAndStem(text), ngram, Nil).sorted
+  }
+
   def stemWords(words: List[String]) = {
     words.map(getStemmedWord(_))
   }
