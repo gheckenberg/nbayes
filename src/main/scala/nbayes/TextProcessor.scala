@@ -35,7 +35,7 @@ object TextProcessor {
 
   def createAllNGramTerms(text: String, ngram : Int) = {
     @tailrec
-    def getNgrams(wordList: List[String], ngram: Int, accum : List[String]) : List[String] = {
+    def getNgrams(wordList: List[String], ngram: Int, accum : List[String] = Nil) : List[String] = {
       if (ngram > 0)
         getNgrams(wordList, ngram - 1, createNGrams(ngram, wordList)
           .map(term => term.foldLeft(null.asInstanceOf[String]) ((a, b) => if (a != null) a + ":" + b else b ))
@@ -43,7 +43,7 @@ object TextProcessor {
       else
         accum
     }
-    getNgrams(splitAndStem(text), ngram, Nil).sorted
+    getNgrams(splitAndStem(text), ngram).sorted
   }
 
   def stemWords(words: List[String]) = {
@@ -52,9 +52,7 @@ object TextProcessor {
 
   def buildWordCountMap(words : List[String]) = {
     val wordFreqs = collection.mutable.HashMap[String, Int]()
-    words.foreach(w => {
-      wordFreqs(w) = if (wordFreqs.contains(w)) wordFreqs(w) + 1 else 1
-    })
+    words.foreach(w => wordFreqs(w) = wordFreqs.getOrElse(w, 0) + 1)
     wordFreqs.toMap
   }
 
